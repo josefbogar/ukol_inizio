@@ -1,0 +1,15 @@
+<!DOCTYPE html>
+<html lang="cs">
+<head>
+  <meta charset="UTF-8">
+  <title>Můj testovací vyhledávač</title>
+</head>
+<body>
+  <h1>Formulář pro scraping Google</h1>
+  <form action="/search" method="GET">
+    <!-- name="query" musí odpovídat tomu, co čteme v serveru: req.query.query -->
+    <input type="text" name="query" placeholder="Zadej klíčové slovo" />
+    <button type="submit">Hledej</button>
+  </form>
+</body>
+</html>
