@@ -68,7 +68,7 @@ app.get('/search', async (req, res) => {
 });
 
 // 4. Nastavení portu, hostitele a timeoutů
-const PORT = process.env.PORT || 3000;
+const PORT = process.env.PORT || 10000;
 const HOST = '0.0.0.0';
 
 const server = app.listen(PORT, HOST, () => {
