@@ -1,9 +1,7 @@
 const express = require('express');
 const puppeteer = require('puppeteer');
 const path = require('path');
-
-// DOPLNĚNÍ (1/2):
-const fs = require('fs');  // modul pro práci se soubory v Node.js
+const fs = require('fs'); // modul pro práci se soubory v Node.js
 
 const app = express();
 
@@ -18,42 +16,52 @@ app.get('/search', async (req, res) => {
     return res.send('Nebylo zadáno žádné hledané slovo (query).');
   }
 
-  // Spustíme Puppeteer
-  const browser = await puppeteer.launch({ headless: 'new' });
-  const page = await browser.newPage();
-
-  // Požadovanou adresu Googlu sestavíme z query
-  const googleURL = `https://www.google.com/search?q=${encodeURIComponent(query)}`;
-  await page.goto(googleURL, { waitUntil: 'networkidle2' });
-
-  // Tohle je jen orientační selektor; Google ho často mění
-  const results = await page.$$eval('div.g', divs => {
-    return divs.map(div => {
-      const headline = div.querySelector('h3')?.innerText || '';
-      const link = div.querySelector('a')?.href || '';
-      const snippet = div.querySelector('.VwiC3b')?.innerText || '';
-      return { headline, link, snippet };
+  try {
+    // Spustíme Puppeteer s nastavením pro cloudové prostředí
+    const browser = await puppeteer.launch({
+      headless: true,
+      args: ['--no-sandbox', '--disable-setuid-sandbox']
     });
-  });
+    const page = await browser.newPage();
 
-  await browser.close();
+    // Požadovanou adresu Googlu sestavíme z query
+    const googleURL = `https://www.google.com/search?q=${encodeURIComponent(query)}`;
+    await page.goto(googleURL, { waitUntil: 'networkidle2' });
 
-  // DOPLNĚNÍ (2/2):
-  // Uložení výsledků do lokálního souboru vysledky.json
-  fs.writeFileSync('vysledky.json', JSON.stringify(results, null, 2), 'utf8');
+    // Selektor a extrakce výsledků
+    const results = await page.$$eval('div.g', divs => {
+      return divs.map(div => {
+        const headline = div.querySelector('h3')?.innerText || '';
+        const link = div.querySelector('a')?.href || '';
+        const snippet = div.querySelector('.VwiC3b')?.innerText || '';
+        return { headline, link, snippet };
+      });
+    });
 
-  // Pošleme JSON s výsledky i klientovi
-  res.json({
-    hledanyVyraz: query,
-    pocetNalezenych: results.length,
-    vysledky: results
-  });
+    await browser.close();
+
+    // Uložení výsledků do lokálního souboru vysledky.json
+    fs.writeFileSync('vysledky.json', JSON.stringify(results, null, 2), 'utf8');
+
+    // Pošleme JSON s výsledky i klientovi
+    res.json({
+      hledanyVyraz: query,
+      pocetNalezenych: results.length,
+      vysledky: results
+    });
+
+  } catch (error) {
+    console.error('Chyba při zpracování Puppeteer:', error);
+    res.status(500).send('Chyba při zpracování dotazu.');
+  }
 });
 
-const PORT = process.env.PORT || 3000; // Dynamický port z prostředí Render
-const HOST = '0.0.0.0'; // Naslouchání na všech IP adresách
+// Dynamický port pro Render a hostitel
+const PORT = process.env.PORT || 3000;
+const HOST = '0.0.0.0';
 
 app.listen(PORT, HOST, () => {
   console.log(`Server běží na adrese http://${HOST}:${PORT}`);
 });
+
 
