@@ -1,5 +1,5 @@
 const express = require('express');
-const puppeteer = require('puppeteer'); // Použijeme nejnovější Puppeteer
+const puppeteer = require('puppeteer'); // Plná verze Puppeteer
 const path = require('path');
 const fs = require('fs'); // Modul pro práci se soubory
 
@@ -24,7 +24,7 @@ app.get('/search', async (req, res) => {
   try {
     console.log(`Hledání výrazu: ${query}`);
 
-    // Spuštění Puppeteer s novým headless režimem
+    // Spuštění Puppeteer s novým headless režimem a potřebnými argumenty
     const browser = await puppeteer.launch({
       headless: 'new',
       args: [
@@ -38,7 +38,6 @@ app.get('/search', async (req, res) => {
     });
 
     const page = await browser.newPage();
-
     const googleURL = `https://www.google.com/search?q=${encodeURIComponent(query)}`;
     console.log(`Navigace na URL: ${googleURL}`);
     await page.goto(googleURL, { waitUntil: 'networkidle2' });
@@ -68,10 +67,15 @@ app.get('/search', async (req, res) => {
   }
 });
 
-// 4. Nastavení portu a hostitele
+// 4. Nastavení portu, hostitele a timeoutů
 const PORT = process.env.PORT || 3000;
 const HOST = '0.0.0.0';
 
-app.listen(PORT, HOST, () => {
+const server = app.listen(PORT, HOST, () => {
   console.log(`Server běží na adrese http://${HOST}:${PORT}`);
 });
+
+// Přidání keepAliveTimeout a headersTimeout
+server.keepAliveTimeout = 120 * 1000; // 120 sekund
+server.headersTimeout = 120 * 1000; // 120 sekund
+
