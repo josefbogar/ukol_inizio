@@ -1,5 +1,5 @@
 const express = require('express');
-const puppeteer = require('puppeteer-core'); // Lehčí verze Puppeteer bez Chromium
+const puppeteer = require('puppeteer'); // Použijeme nejnovější Puppeteer
 const path = require('path');
 const fs = require('fs'); // Modul pro práci se soubory
 
@@ -24,10 +24,9 @@ app.get('/search', async (req, res) => {
   try {
     console.log(`Hledání výrazu: ${query}`);
 
-    // Spuštění Puppeteer-core s explicitní cestou k Chrome
+    // Spuštění Puppeteer s novým headless režimem
     const browser = await puppeteer.launch({
-      headless: true,
-      executablePath: '/usr/bin/google-chrome', // Cesta k předinstalovanému Chrome na Renderu
+      headless: 'new',
       args: [
         '--no-sandbox',
         '--disable-setuid-sandbox',
@@ -64,7 +63,7 @@ app.get('/search', async (req, res) => {
       vysledky: results
     });
   } catch (error) {
-    console.error('Chyba při zpracování Puppeteer:', error);
+    console.error('Chyba Puppeteer:', error);
     res.status(500).send('Chyba při zpracování dotazu.');
   }
 });
@@ -76,5 +75,3 @@ const HOST = '0.0.0.0';
 app.listen(PORT, HOST, () => {
   console.log(`Server běží na adrese http://${HOST}:${PORT}`);
 });
-
-
