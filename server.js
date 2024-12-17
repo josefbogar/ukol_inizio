@@ -50,8 +50,10 @@ app.get('/search', async (req, res) => {
   });
 });
 
-const PORT = 3000;
-app.listen(PORT, () => {
-  console.log(`Server běží na portu ${PORT}`);
+const PORT = process.env.PORT || 3000; // Dynamický port z prostředí Render
+const HOST = '0.0.0.0'; // Naslouchání na všech IP adresách
+
+app.listen(PORT, HOST, () => {
+  console.log(`Server běží na adrese http://${HOST}:${PORT}`);
 });
 
