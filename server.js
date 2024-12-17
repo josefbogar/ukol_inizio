@@ -1,5 +1,5 @@
 const express = require('express');
-const puppeteer = require('puppeteer');
+const puppeteer = require('puppeteer-core'); // Lehčí verze Puppeteer bez Chromium
 const path = require('path');
 const fs = require('fs'); // Modul pro práci se soubory
 
@@ -24,13 +24,24 @@ app.get('/search', async (req, res) => {
   try {
     console.log(`Hledání výrazu: ${query}`);
 
+    // Spuštění Puppeteer-core s explicitní cestou k Chrome
     const browser = await puppeteer.launch({
       headless: true,
-      args: ['--no-sandbox', '--disable-setuid-sandbox']
+      executablePath: '/usr/bin/google-chrome', // Cesta k předinstalovanému Chrome na Renderu
+      args: [
+        '--no-sandbox',
+        '--disable-setuid-sandbox',
+        '--disable-gpu',
+        '--disable-dev-shm-usage',
+        '--single-process',
+        '--no-zygote'
+      ]
     });
+
     const page = await browser.newPage();
 
     const googleURL = `https://www.google.com/search?q=${encodeURIComponent(query)}`;
+    console.log(`Navigace na URL: ${googleURL}`);
     await page.goto(googleURL, { waitUntil: 'networkidle2' });
 
     const results = await page.$$eval('div.g', divs => {
@@ -60,8 +71,10 @@ app.get('/search', async (req, res) => {
 
 // 4. Nastavení portu a hostitele
 const PORT = process.env.PORT || 3000;
-app.listen(PORT, () => {
-  console.log(`Server běží na adrese http://localhost:${PORT}`);
+const HOST = '0.0.0.0';
+
+app.listen(PORT, HOST, () => {
+  console.log(`Server běží na adrese http://${HOST}:${PORT}`);
 });
 
 

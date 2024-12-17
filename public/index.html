@@ -7,8 +7,8 @@
 <body>
   <h1>Formulář pro scraping Google</h1>
   <form action="/search" method="GET">
-    <!-- name="query" musí odpovídat tomu, co čteme v serveru: req.query.query -->
-    <input type="text" name="query" placeholder="Zadej klíčové slovo" />
+    <label for="query">Zadej klíčové slovo:</label>
+    <input type="text" id="query" name="query" placeholder="Zadej klíčové slovo" required />
     <button type="submit">Hledej</button>
   </form>
 </body>
