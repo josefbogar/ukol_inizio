@@ -31,7 +31,7 @@ app.get('/search', async (req, res) => {
     // Spuštění Puppeteer
     console.log('🟡 Spouštím Puppeteer...');
     const browser = await puppeteer.launch({
-      headless: true,
+      headless: false,  // PRO LOKÁLNÍ LADĚNÍ: abychom viděli, co se děje
       args: [
         '--no-sandbox',
         '--disable-setuid-sandbox',
@@ -44,16 +44,32 @@ app.get('/search', async (req, res) => {
     console.log('🟢 Puppeteer byl úspěšně spuštěn.');
 
     const page = await browser.newPage();
+    
+    // Nastavíme user agent, aby Google nepanikařil
+    await page.setUserAgent(
+      'Mozilla/5.0 (Windows NT 10.0; Win64; x64) ' +
+      'AppleWebKit/537.36 (KHTML, like Gecko) ' +
+      'Chrome/87.0.4280.66 Safari/537.36'
+    );
+
     const googleURL = `https://www.google.com/search?q=${encodeURIComponent(query)}`;
     console.log(`🟡 Navigace na URL: ${googleURL}`);
 
     await page.goto(googleURL, { waitUntil: 'networkidle2' });
 
-    const results = await page.$$eval('div.g', divs => {
+    // Počkáme, až se objeví div.tF2Cxc (třída používaná pro výsledky)
+    await page.waitForSelector('div.tF2Cxc', { timeout: 60000 });
+    
+    // Dáme ještě malou prodlevu, aby se domalovaly snippet texty
+    await new Promise(resolve => setTimeout(resolve, 2000));
+
+    const results = await page.$$eval('div.tF2Cxc', (divs) => {
       return divs.map(div => {
-        const headline = div.querySelector('h3')?.innerText || '';
+        const headline = div.querySelector('h3')?.innerText.trim() || '';
         const link = div.querySelector('a')?.href || '';
-        const snippet = div.querySelector('.VwiC3b')?.innerText || '';
+        // snippet se často skrývá v jedné z těchto tříd
+        const snippetElement = div.querySelector('.aCOpRe, .IsZvec, .VwiC3b');
+        const snippet = snippetElement ? snippetElement.innerText.trim() : '';
         return { headline, link, snippet };
       });
     });
@@ -74,7 +90,7 @@ app.get('/search', async (req, res) => {
 });
 
 // 4. Nastavení portu, hostitele a timeoutů
-const PORT = process.env.PORT || 10000; // Render nastaví PORT automaticky
+const PORT = process.env.PORT || 3000; // Render nastaví PORT automaticky
 const HOST = '0.0.0.0';
 
 const server = app.listen(PORT, HOST, () => {
